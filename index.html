@@ -1477,8 +1477,29 @@ let toastT=null;
 function toast(icon,msg,sub){$('ut-icon').textContent=icon;$('ut-msg').textContent=msg;$('ut-sub').textContent=sub;$('unlock-toast').classList.add('show');if(toastT)clearTimeout(toastT);toastT=setTimeout(()=>$('unlock-toast').classList.remove('show'),3400);}
 
 // ── AUDIO ────────────────────────────────────
-let audioCtx=null,muted=false;
-function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx;}
+let audioCtx=null,muted=false,audioUnlocked=false;
+function getCtx(){
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  return audioCtx;
+}
+function unlockAudio(){
+  if(audioUnlocked)return;
+  audioUnlocked=true;
+  try{
+    const ctx=getCtx();
+    // Play a silent buffer — required by iOS Safari to unlock the AudioContext
+    const buf=ctx.createBuffer(1,1,22050);
+    const src=ctx.createBufferSource();
+    src.buffer=buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    ctx.resume();
+  }catch(_){}
+}
+// Unlock on any early touch/click — before gameplay starts
+document.addEventListener('touchstart',unlockAudio,{once:true,passive:true});
+document.addEventListener('click',unlockAudio,{once:true});
 function toggleMute(){muted=!muted;$('mute-btn').textContent=muted?'🔇':'🔊';try{localStorage.setItem('sk_mute',muted?'1':'0');}catch(_){}}
 const PT={normal:{freq:520,type:'sine',dur:.12,vol:.18},large:{freq:320,type:'triangle',dur:.18,vol:.22},chain:{freq:680,type:'sine',dur:.10,vol:.20},nova:{freq:200,type:'sawtooth',dur:.28,vol:.28},dud:{freq:160,type:'square',dur:.08,vol:.10}};
 function playPop(type,wave){if(muted)return;try{const ctx=getCtx(),cfg=PT[type]||PT.normal;const freq=cfg.freq*(1+Math.min(wave,12)*.045);const osc=ctx.createOscillator(),gain=ctx.createGain(),filt=ctx.createBiquadFilter();osc.type=cfg.type;osc.frequency.setValueAtTime(freq,ctx.currentTime);osc.frequency.exponentialRampToValueAtTime(freq*.55,ctx.currentTime+cfg.dur);filt.type='bandpass';filt.frequency.value=freq*1.2;filt.Q.value=1.4;gain.gain.setValueAtTime(cfg.vol,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+cfg.dur);osc.connect(filt);filt.connect(gain);gain.connect(ctx.destination);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+cfg.dur+.02);}catch(_){}}
@@ -1811,8 +1832,10 @@ function makeField(seed){
 
   // ── Mobile vs desktop params ──────────────────
   const mob=W<600;
+  // Mobile gets slightly bigger bubbles for tappability, but NO bonus explosion radius
+  // — chains should require some thought, not auto-sweep the field
   const rScale=mob?1.2:1;
-  const erScale=mob?1.15:Math.max(0.85,Math.min(1.0,areaScale));
+  const erScale=mob?0.95:Math.max(0.85,Math.min(1.0,areaScale));
   const types={
     normal:{r:Math.round(16*rScale), er:Math.round(76*erScale),  pts:100,w:40},
     large: {r:Math.round(22*rScale), er:Math.round(115*erScale), pts:160,w:14},
@@ -1821,12 +1844,13 @@ function makeField(seed){
     dud:   {r:Math.round(12*rScale), er:0,                       pts:0,  w:10},
   };
 
-  // Mobile: slightly fewer bubbles, 4 duds (some challenge), bubbles a bit spread
-  const bubCount = mob ? 46 : Math.max(28, Math.min(62, Math.floor(62*areaScale*1.3)));
-  const dudCount = mob ? 4  : Math.max(4, Math.floor(bubCount*0.13));
+  // Mobile: similar count to desktop but with more duds to break chains
+  const bubCount = mob ? 48 : Math.max(28, Math.min(62, Math.floor(62*areaScale*1.3)));
+  const dudCount = mob ? 8  : Math.max(4, Math.floor(bubCount*0.13));
 
-  const maxScatter = mob ? Math.min(95, playW*0.2) : Math.max(40,Math.min(120,playW*0.14));
-  const minGap     = mob ? 10 : Math.max(14, Math.round(28/Math.max(areaScale,0.5)));
+  // Wider scatter on mobile so bubbles aren't all crammed together (prevents 100% sweeps)
+  const maxScatter = mob ? Math.min(130, playW*0.25) : Math.max(40,Math.min(120,playW*0.14));
+  const minGap     = mob ? 14 : Math.max(14, Math.round(28/Math.max(areaScale,0.5)));
 
   const nonDud=['normal','normal','normal','large','chain','chain',novaRounds>0?'nova':'chain','nova'];
   let tr2=0;
@@ -1865,7 +1889,7 @@ function drawCombo(now){if(gState!=='react'||comboMulti<=1)return;const col=COMB
 // ── CHAIN ─────────────────────────────────────
 function getBubCol(type,now){return activeTheme().getBubbleColor(type,now);}
 function explode(idx,wave,now){const b=bubbles[idx];if(!b||done.has(idx)||b.state!=='idle')return;done.add(idx);if(b.type==='dud'){b.state='dud';b.popT=now;playPop('dud',wave);return;}b.state='pop';b.popT=now;chainN++;if(b.type==='nova')novaHitsRound++;comboWave=wave;comboMulti=waveToMulti(wave);const pts=Math.round(b.pts*(1+wave*.07)*waveToMulti(wave));score+=pts;lastPopT=now;const col=getBubCol(b.type,now);const fxCol=getFXColor(col,now);spawnParts(b.x,b.y,fxCol,b.r);rings.push({x:b.x,y:b.y,r:b.r,maxR:b.er,col,born:now,dur:420});floats.push({x:b.x,y:b.y-b.r-4,pts,multi:waveToMulti(wave),life:1,vy:-1.2});playPop(b.type,wave);if(b.type==='nova'){shakeAmt=11;shakeT=now;}else if(b.type==='large'){if(shakeAmt<7){shakeAmt=7;shakeT=now;}}else{if(shakeAmt<2.5){shakeAmt=2.5;shakeT=now;}}const cm=b.type==='chain'?1.55:1.0;bubbles.forEach((nb,ni)=>{if(ni===idx||done.has(ni)||nb.state!=='idle')return;if(waveQ.some(e=>e.idx===ni))return;if(Math.hypot(b.x-nb.x,b.y-nb.y)<b.er*cm+nb.r)waveQ.push({idx:ni,wave:wave+1});});}
-function startChain(px,py){if(gState!=='idle')return;getCtx();const tapR=W<600?170:140;let best=-1,bestD=Infinity;bubbles.forEach((b,i)=>{const d=Math.hypot(px-b.x,py-b.y);if(d<bestD){best=i;bestD=d;}});if(best===-1||bestD>tapR)return;gState='react';$('hint').style.opacity='0';waveQ=[{idx:best,wave:0}];done=new Set();reactT=lastPopT=chainStartT=Date.now();score=chainN=0;comboWave=0;comboMulti=1;novaHitsRound=0;spawnSpark(px,py);playSpark();}
+function startChain(px,py){if(gState!=='idle')return;unlockAudio();getCtx();const tapR=W<600?170:140;let best=-1,bestD=Infinity;bubbles.forEach((b,i)=>{const d=Math.hypot(px-b.x,py-b.y);if(d<bestD){best=i;bestD=d;}});if(best===-1||bestD>tapR)return;gState='react';$('hint').style.opacity='0';waveQ=[{idx:best,wave:0}];done=new Set();reactT=lastPopT=chainStartT=Date.now();score=chainN=0;comboWave=0;comboMulti=1;novaHitsRound=0;spawnSpark(px,py);playSpark();}
 function tickReact(){const now=Date.now(),elapsed=now-reactT,curWave=Math.floor(elapsed/WAVE_MS);waveQ.filter(e=>e.wave<=curWave&&!done.has(e.idx)).forEach(e=>explode(e.idx,e.wave,now));if(!waveQ.some(e=>!done.has(e.idx))&&(now-lastPopT)>POP_MS+140&&elapsed>WAVE_MS*2)endRound();}
 
 // ── END ROUND ─────────────────────────────────
