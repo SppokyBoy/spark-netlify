@@ -19,42 +19,47 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* ─── MOBILE & PWA FOUNDATIONS ─── */
-:root{
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bot: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
+/* ─── HUD ─── */
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:10;
+  display:flex;flex-direction:column;
+  background:rgba(8,8,14,0.95);
+  border-bottom:1px solid var(--b1);
+  backdrop-filter:blur(20px);
+  padding-top:var(--safe-top);
+  padding-left:var(--safe-left);
+  padding-right:var(--safe-right);
 }
-*{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
-html{height:100%;height:-webkit-fill-available}
-body{min-height:100%;min-height:-webkit-fill-available;overflow:hidden;overscroll-behavior:none;touch-action:none}
-/* Prevent text selection during gameplay */
-canvas{touch-action:none}
-/* Safe area padding for notched phones */
-#hud{padding-top:calc(8px + var(--safe-top));padding-left:calc(14px + var(--safe-left));padding-right:calc(14px + var(--safe-right))}
-#hub-card{padding-bottom:var(--safe-bot)}
-#hub-body{padding-bottom:calc(16px + var(--safe-bot))}
-/* Slot machine safe bottom */
-#loot-overlay{padding-bottom:calc(24px + var(--safe-bot))}
-/* Result overlay safe bottom */
-#overlay{padding-bottom:calc(20px + var(--safe-bot))}
-/* Mobile: make hub taller */
-@media(max-height:700px){#hub-card{height:98vh}}
-/* Mobile: compact hub tabs on small screens */
-@media(max-width:380px){
-  .htab .hi{font-size:15px}
-  .htab .hl{font-size:7px}
-  #hub-tabs{padding:8px 8px 0;gap:2px}
-  .htab{padding:6px 2px 8px}
-  #slot-machine{transform:scale(0.9);transform-origin:center top}
+/* Row 1: logo + xp + stats */
+#hud-row1{display:flex;align-items:center;gap:10px;padding:8px 14px 0}
+/* Row 2: mode pill (left/center) + action buttons (right) */
+#hud-row2{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 10px 7px;gap:8px;
 }
-/* Touch-friendly minimum tap targets */
-.tr-btn,.pill-btn,.btn,.mbtn,.sbuy,.gsi-btn,.ms-btn,.mst-btn,.slot-spin-btn,.collect-btn{min-height:36px}
-.htab{min-height:50px}
-.equip-slot{min-height:62px}
-/* Prevent iOS rubber-band scroll on game canvas */
-html,body{position:fixed;width:100%;overflow:hidden}
+#mode-pill{
+  display:flex;align-items:center;
+  background:var(--bg3);
+  border:1px solid var(--b2);border-radius:99px;padding:3px;
+  flex-shrink:0;
+}
+.pill-btn{
+  padding:4px 13px;border-radius:99px;
+  font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  border:none;cursor:pointer;transition:all .2s;background:transparent;color:var(--t3);
+  min-height:28px;
+}
+.pill-btn.active{background:var(--amber);color:#1a0800}
+.pill-btn.daily-active{background:var(--coral);color:#fff}
+#daily-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);margin-left:5px;margin-right:-2px;display:none;animation:pdot 2s infinite;flex-shrink:0}
+@keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
+#top-right{display:flex;gap:5px;flex-shrink:0}
+.tr-btn{
+  background:var(--glass);border:1px solid var(--b2);color:var(--t2);
+  border-radius:99px;padding:4px 11px;font-size:11px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s;
+  min-height:28px;
+}
 /* ═══════════════════════════════════════
    DESIGN TOKENS — Amber/Charcoal System
 ═══════════════════════════════════════ */
@@ -129,37 +134,29 @@ canvas{position:fixed;top:0;left:0;display:block}
 .gsi-btn{padding:7px 13px;border-radius:var(--r12);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;border:1px solid rgba(0,212,180,.25);cursor:pointer;flex-shrink:0;transition:all .2s;background:rgba(0,212,180,.12);color:var(--teal);}
 .gsi-btn:hover{background:rgba(0,212,180,.22);transform:scale(1.04)}
 .gsi-btn:disabled{opacity:.3;cursor:not-allowed;transform:none}
-
-#mode-pill{
-  position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:9;
-  display:flex;align-items:center;background:var(--bg2);
-  border:1px solid var(--b2);border-radius:99px;padding:3px;
-  backdrop-filter:blur(16px);
-}
-.pill-btn{
-  padding:5px 16px;border-radius:99px;
-  font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
-  border:none;cursor:pointer;transition:all .2s;background:transparent;color:var(--t3);
-}
-.pill-btn.active{background:var(--amber);color:#1a0800}
-.pill-btn.daily-active{background:var(--coral);color:#fff}
-#daily-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);margin-left:5px;margin-right:-2px;display:none;animation:pdot 2s infinite}
-@keyframes pdot{0%,100%{opacity:1}50%{opacity:.3}}
-
-/* TOP RIGHT */
-#top-right{position:fixed;top:58px;right:12px;z-index:11;display:flex;gap:5px}
-.tr-btn{
-  background:var(--glass);border:1px solid var(--b2);color:var(--t2);
-  border-radius:99px;padding:4px 12px;font-size:11px;cursor:pointer;
-  font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s;
-}
 .tr-btn:hover{background:var(--glass2);color:var(--t1)}
 
-/* DAILY BANNER */
-#daily-banner{position:fixed;top:100px;left:50%;transform:translateX(-50%);z-index:8;display:none;align-items:center;gap:8px;padding:5px 16px;border-radius:99px;background:rgba(255,69,96,.08);border:1px solid rgba(255,69,96,.22);font-size:11px;font-weight:600;white-space:nowrap;color:var(--t2)}
+/* Mobile foundations */
+*{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{position:fixed;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
+html{height:-webkit-fill-available}
+canvas{touch-action:none}
+#hub-card{padding-bottom:var(--safe-bot)}
+#hub-body{padding-bottom:calc(16px + var(--safe-bot))}
+#loot-overlay{padding-bottom:calc(24px + var(--safe-bot))}
+#overlay{padding-bottom:calc(20px + var(--safe-bot))}
+@media(max-height:700px){#hub-card{height:98vh}}
+@media(max-width:380px){.htab .hi{font-size:14px}.htab .hl{font-size:7px}#hub-tabs{padding:8px 6px 0;gap:2px}.htab{padding:6px 1px 8px}#slot-machine{transform:scale(0.88);transform-origin:center top}}
+.htab{min-height:50px}
+.equip-slot{min-height:62px}
+.btn,.mbtn,.sbuy,.gsi-btn,.ms-btn,.mst-btn,.slot-spin-btn,.collect-btn{min-height:38px}
+
+/* DAILY BANNER — sits just below the HUD dynamically */
+#daily-banner{position:fixed;left:50%;transform:translateX(-50%);z-index:8;display:none;align-items:center;gap:8px;padding:5px 16px;border-radius:99px;background:rgba(255,69,96,.08);border:1px solid rgba(255,69,96,.22);font-size:11px;font-weight:600;white-space:nowrap;color:var(--t2)}
 #daily-banner.show{display:flex}
 #daily-num{color:var(--coral)}
 #daily-done-badge{padding:2px 7px;border-radius:99px;background:rgba(0,212,180,.1);border:1px solid rgba(0,212,180,.25);color:var(--teal);font-size:9px;display:none}
+
 
 /* ═══════════════════════════════════════
    HUB — Full overlay with slide-up card
@@ -672,7 +669,7 @@ canvas{position:fixed;top:0;left:0;display:block}
 .gem-cost{font-size:10px;font-weight:700;color:var(--teal);font-family:'JetBrains Mono',monospace}
 
 /* THEME PANEL */
-#theme-panel{position:fixed;top:90px;right:12px;z-index:20;width:310px;background:var(--bg2);border:1px solid var(--b2);border-radius:var(--r20);padding:14px;display:none;backdrop-filter:blur(24px);max-height:calc(100vh - 110px);overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#theme-panel{position:fixed;top:98px;right:12px;z-index:20;width:300px;background:var(--bg2);border:1px solid var(--b2);border-radius:var(--r20);padding:14px;display:none;backdrop-filter:blur(24px);max-height:calc(100vh - 110px);overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.5)}
 #theme-panel.open{display:block}
 .gpill{flex:1;padding:6px 10px;border-radius:99px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;border:1px solid var(--b2);cursor:pointer;transition:all .2s;background:transparent;color:var(--t3);}
 .gpill.active{background:var(--amber);color:#1a0800;border-color:var(--amber)}
@@ -695,7 +692,7 @@ canvas{position:fixed;top:0;left:0;display:block}
 #legend{position:fixed;bottom:20px;right:14px;z-index:5;display:flex;flex-direction:column;gap:4px;pointer-events:none}
 .leg{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:500;color:var(--t3)}
 .leg-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-#lvup{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:25;background:rgba(255,140,0,.12);border:1px solid rgba(255,140,0,.28);padding:7px 20px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--amber);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
+#lvup{position:fixed;top:98px;left:50%;transform:translateX(-50%);z-index:25;background:rgba(255,140,0,.12);border:1px solid rgba(255,140,0,.28);padding:7px 20px;border-radius:99px;font-size:12px;font-weight:700;letter-spacing:.05em;color:var(--amber);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
 #lvup.show{opacity:1}
 #next-daily{position:fixed;bottom:20px;left:14px;z-index:5;font-size:9px;color:var(--t3);pointer-events:none;line-height:1.5;font-family:'JetBrains Mono',monospace}
 #unlock-toast{
@@ -715,30 +712,32 @@ canvas{position:fixed;top:0;left:0;display:block}
 <body>
 <canvas id="c"></canvas>
 
-<!-- HUD -->
+<!-- HUD: two rows, no separate fixed elements overlapping -->
 <div id="hud">
-  <span id="logo">SPARK</span>
-  <div class="xp-wrap">
-    <div class="xp-meta"><span id="lv-label">LV 1</span><span id="xp-label">0/300</span></div>
-    <div class="xp-track"><div id="xp-bar"></div></div>
+  <!-- Row 1: branding + xp + stats -->
+  <div id="hud-row1">
+    <span id="logo">SPARK</span>
+    <div class="xp-wrap">
+      <div class="xp-meta"><span id="lv-label">LV 1</span><span id="xp-label">0/300</span></div>
+      <div class="xp-track"><div id="xp-bar"></div></div>
+    </div>
+    <div class="stat"><span class="stat-v" id="score-v">0</span><span class="stat-l">Score</span></div>
+    <div class="stat"><span class="stat-v" id="sparks-v">0</span><span class="stat-l">⚡ Sparks</span></div>
+    <div class="stat"><span class="stat-v" id="streak-v">1🔥</span><span class="stat-l">Streak</span></div>
   </div>
-  <div class="stat"><span class="stat-v" id="score-v">0</span><span class="stat-l">Score</span></div>
-  <div class="stat"><span class="stat-v" id="sparks-v">0</span><span class="stat-l">⚡ Sparks</span></div>
-  <div class="stat"><span class="stat-v" id="streak-v">1🔥</span><span class="stat-l">Streak</span></div>
-</div>
-
-<!-- Mode pill -->
-<div id="mode-pill">
-  <div id="daily-dot"></div>
-  <button class="pill-btn active" id="pill-free"  onclick="switchMode('free')">Free Play</button>
-  <button class="pill-btn"        id="pill-daily" onclick="switchMode('daily')">Daily</button>
-</div>
-
-<!-- Top right -->
-<div id="top-right">
-  <button class="tr-btn" onclick="openHub('missions')">⊞ Hub</button>
-  <button class="tr-btn" id="gear-btn" onclick="openGearPanel()">◈ Gear</button>
-  <button class="tr-btn" id="mute-btn" onclick="toggleMute()">🔊</button>
+  <!-- Row 2: mode pill + action buttons, same row, no overlap possible -->
+  <div id="hud-row2">
+    <div id="mode-pill">
+      <div id="daily-dot"></div>
+      <button class="pill-btn active" id="pill-free"  onclick="switchMode('free')">Free Play</button>
+      <button class="pill-btn"        id="pill-daily" onclick="switchMode('daily')">Daily</button>
+    </div>
+    <div id="top-right">
+      <button class="tr-btn" onclick="openHub('missions')">⊞ Hub</button>
+      <button class="tr-btn" id="gear-btn" onclick="openGearPanel()">◈ Gear</button>
+      <button class="tr-btn" id="mute-btn" onclick="toggleMute()">🔊</button>
+    </div>
+  </div>
 </div>
 
 <!-- Gear Panel (Theme + Loadout combined) -->
@@ -855,7 +854,7 @@ let W,H;
 function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
 resize();window.addEventListener('resize',()=>{resize();initBgElements();});
 
-const HUD_H=50,PILL_H=35,SAFE_TOP=HUD_H+PILL_H+8;
+const HUD_H=90,PILL_H=0,SAFE_TOP=HUD_H+8;
 const BUBBLE_N=62,WAVE_MS=105,POP_MS=240,PARTS_N=12;
 const BASE_TYPES={normal:{r:16,er:76,pts:100,w:40},large:{r:22,er:115,pts:160,w:14},chain:{r:14,er:70,pts:130,w:22},nova:{r:20,er:165,pts:260,w:8},dud:{r:14,er:0,pts:0,w:10}};
 
@@ -1806,8 +1805,16 @@ function updateCrateProgress(){
   }
 }
 
+function positionBanner(){
+  const hud=$('hud');
+  if(hud&&$('daily-banner')){
+    $('daily-banner').style.top=(hud.offsetHeight+4)+'px';
+  }
+}
 function updateHUD(){
-$('score-v').textContent=score.toLocaleString();$('streak-v').textContent=pStreak+'🔥';$('sparks-v').textContent=sparks.toLocaleString();$('lv-label').textContent='LV '+pLevel;const pct=Math.min(100,(pXP/xpNeeded(pLevel))*100);$('xp-bar').style.width=pct.toFixed(1)+'%';$('xp-label').textContent=pXP.toLocaleString()+'/'+xpNeeded(pLevel).toLocaleString();$('daily-dot').style.display=(!dailyPlayed)?'block':'none';updateLegend();}
+  positionBanner();
+  $('score-v').textContent=score.toLocaleString();$('streak-v').textContent=pStreak+'🔥';$('sparks-v').textContent=sparks.toLocaleString();$('lv-label').textContent='LV '+pLevel;const pct=Math.min(100,(pXP/xpNeeded(pLevel))*100);$('xp-bar').style.width=pct.toFixed(1)+'%';$('xp-label').textContent=pXP.toLocaleString()+'/'+xpNeeded(pLevel).toLocaleString();$('daily-dot').style.display=(!dailyPlayed)?'block':'none';updateLegend();
+}
 
 // ── RENDER ────────────────────────────────────
 function drawSoapBubble(b,col,gm){const r=b.r;cx.beginPath();cx.arc(0,0,r,0,Math.PI*2);const fill=cx.createRadialGradient(-r*.15,-r*.15,r*.05,0,0,r);fill.addColorStop(0,col+'44');fill.addColorStop(.6,col+'28');fill.addColorStop(1,col+'18');cx.fillStyle=fill;cx.fill();cx.shadowBlur=10*gm;cx.shadowColor=col+'88';cx.beginPath();cx.arc(0,0,r,0,Math.PI*2);cx.strokeStyle=col+'CC';cx.lineWidth=2;cx.stroke();cx.shadowBlur=0;cx.save();cx.globalAlpha=.22;cx.beginPath();cx.arc(0,0,r*.92,Math.PI*1.15,Math.PI*1.85);cx.strokeStyle='rgba(180,230,255,.9)';cx.lineWidth=3;cx.stroke();cx.restore();cx.save();const hl=cx.createRadialGradient(-r*.28,-r*.35,0,-r*.28,-r*.35,r*.42);hl.addColorStop(0,'rgba(255,255,255,.82)');hl.addColorStop(.5,'rgba(255,255,255,.30)');hl.addColorStop(1,'rgba(255,255,255,0)');cx.fillStyle=hl;cx.beginPath();cx.arc(-r*.28,-r*.35,r*.42,0,Math.PI*2);cx.fill();cx.restore();cx.save();cx.globalAlpha=.35;cx.beginPath();cx.arc(r*.32,r*.36,r*.14,0,Math.PI*2);cx.fillStyle='rgba(255,255,255,.6)';cx.fill();cx.restore();if(b.type==='chain'||b.type==='nova'){cx.fillStyle=col;cx.globalAlpha=.85;cx.font=Math.round(r*.80)+'px sans-serif';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(b.type==='chain'?'⚡':'★',0,1);}else if(b.type==='large'){cx.save();cx.globalAlpha=.3;cx.beginPath();cx.arc(0,0,r*.45,0,Math.PI*2);cx.strokeStyle=col+'88';cx.lineWidth=.8;cx.stroke();cx.restore();}}
