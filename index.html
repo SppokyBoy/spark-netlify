@@ -150,7 +150,7 @@ canvas{touch-action:none}
 #hub-body{padding-bottom:calc(16px + var(--sab))}
 #loot-overlay{padding-bottom:calc(24px + var(--sab))}
 #overlay{padding-bottom:calc(20px + var(--sab))}
-@media(max-height:700px){#hub-card{height:98vh}}
+@media(max-height:700px){#hub-body{padding-bottom:8px}}
 @media(max-width:380px){.htab .hi{font-size:14px}.htab .hl{font-size:7px}#hub-tabs{padding:8px 6px 0;gap:2px}.htab{padding:6px 1px 8px}#slot-machine{transform:scale(0.88);transform-origin:center top}}
 .htab{min-height:50px}
 .equip-slot{min-height:62px}
@@ -173,7 +173,8 @@ canvas{touch-action:none}
 }
 #hub.open{background:rgba(4,4,10,0.85);pointer-events:all;backdrop-filter:blur(10px)}
 #hub-card{
-  position:absolute;bottom:0;left:0;right:0;height:92vh;
+  position:absolute;bottom:0;left:0;right:0;
+  max-height:calc(100% - 55px);
   background:var(--bg2);
   border-radius:22px 22px 0 0;
   border-top:1px solid var(--b2);
@@ -181,6 +182,7 @@ canvas{touch-action:none}
   transform:translateY(100%);
   transition:transform .38s cubic-bezier(.25,1,.5,1);
   overflow:hidden;
+  padding-bottom:max(0px,var(--sab));
 }
 /* Amber top glow line */
 #hub-card::after{
@@ -861,11 +863,27 @@ const $=id=>document.getElementById(id);
 const cv=$('c'),cx=cv.getContext('2d');
 let W,H;
 function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
-resize();window.addEventListener('resize',()=>{resize();initBgElements();});
+resize();window.addEventListener('resize',()=>{resize();updateSafeTop();initBgElements();});
 
-const HUD_H=110,PILL_H=0,SAFE_TOP=HUD_H+8;
-const BUBBLE_N=62,WAVE_MS=105,POP_MS=240,PARTS_N=12;
-const BASE_TYPES={normal:{r:16,er:76,pts:100,w:40},large:{r:22,er:115,pts:160,w:14},chain:{r:14,er:70,pts:130,w:22},nova:{r:20,er:165,pts:260,w:8},dud:{r:14,er:0,pts:0,w:10}};
+const HUD_H=110,PILL_H=0;
+let SAFE_TOP=HUD_H+8;
+function updateSafeTop(){const hud=$('hud');if(hud)SAFE_TOP=hud.offsetHeight+8;}
+const WAVE_MS=105,POP_MS=240,PARTS_N=12;
+const isMobile=()=>Math.min(window.innerWidth,window.innerHeight)<600;
+function getBubbleTypes(){
+  const m=isMobile();
+  // Mobile: 30% bigger radii + 40% bigger explosion radii for easier chaining
+  const s=m?1.3:1, es=m?1.4:1;
+  return{
+    normal:{r:Math.round(16*s),er:Math.round(76*es), pts:100,w:40},
+    large: {r:Math.round(22*s),er:Math.round(115*es),pts:160,w:14},
+    chain: {r:Math.round(14*s),er:Math.round(70*es), pts:130,w:22},
+    nova:  {r:Math.round(20*s),er:Math.round(165*es),pts:260,w:8},
+    dud:   {r:Math.round(14*s),er:0,                 pts:0,  w:10},
+  };
+}
+const BUBBLE_N_BASE=62;
+function getBubbleN(){return isMobile()?46:BUBBLE_N_BASE;} // fewer on mobile = less cramped
 
 // ── FX PACK DEFINITIONS ─────────────────────
 // Color function only — previews are pure CSS
@@ -1381,7 +1399,7 @@ function loadProgress(){
   }catch(_){}
 }
 function saveGS(){try{localStorage.setItem('sk_gs',JSON.stringify(globalStats));}catch(_){}}
-function xpNeeded(l){return Math.floor(400*Math.pow(1.35,l-1));}
+function xpNeeded(l){return Math.floor(300+l*l*60);}
 function addXP(amt){
   const m=xpBoostRounds>0?2:1;pXP+=amt*m;let leveled=false;const ol=pLevel;
   while(pXP>=xpNeeded(pLevel)){pXP-=xpNeeded(pLevel);pLevel++;leveled=true;}
@@ -1777,13 +1795,6 @@ function makeField(seed){
   const actualArea=playW*playH;
   const areaScale=Math.sqrt(actualArea/refArea); // ~0.55 on 390px phone
 
-  // Fewer bubbles on smaller screens — but enough to be fun
-  const minBubbles=24;
-  const maxBubbles=BUBBLE_N; // 62
-  const bubCount=Math.max(minBubbles, Math.min(maxBubbles, Math.floor(maxBubbles*areaScale*1.3)));
-  const dudCount=Math.max(4, Math.floor(bubCount*0.13));
-
-  // Cluster centres: fewer on small screens, minimum separation scales too
   const clusterCount=Math.max(4, Math.min(9, 5+Math.floor(rng.next()*3)));
   const minClusterSep=Math.max(80, playW*0.22);
   const centres=[];
@@ -1798,22 +1809,25 @@ function makeField(seed){
     if(ok)centres.push({x:cx2,y:cy2});
   }
 
-  // Explosion radii: scale DOWN on small screens so chains are harder to trigger
-  // On a 390px phone the er should be ~55-60% of desktop values
-  const erScale=Math.max(0.50, Math.min(1.0, areaScale));
+  // ── Mobile vs desktop params ──────────────────
+  const mob=W<600;
+  const rScale=mob?1.4:1;
+  const erScale=mob?1.6:Math.max(0.85,Math.min(1.0,areaScale));
   const types={
-    normal:{r:16, er:Math.round(76*erScale),  pts:100,w:40},
-    large: {r:22, er:Math.round(115*erScale), pts:160,w:14},
-    chain: {r:14, er:Math.round(70*erScale),  pts:130,w:22},
-    nova:  {r:20, er:Math.round(165*erScale), pts:260,w:8},
-    dud:   {r:14, er:0,                        pts:0,  w:10},
+    normal:{r:Math.round(16*rScale), er:Math.round(76*erScale),  pts:100,w:40},
+    large: {r:Math.round(22*rScale), er:Math.round(115*erScale), pts:160,w:14},
+    chain: {r:Math.round(14*rScale), er:Math.round(70*erScale),  pts:130,w:22},
+    nova:  {r:Math.round(20*rScale), er:Math.round(165*erScale), pts:260,w:8},
+    dud:   {r:Math.round(12*rScale), er:0,                       pts:0,  w:10},
   };
 
-  // Scatter distance around cluster centres
-  const maxScatter=Math.max(40, Math.min(120, playW*0.14));
+  // Mobile: fewer bubbles clustered tighter, minimal duds
+  const bubCount = mob ? 36 : Math.max(28, Math.min(62, Math.floor(62*areaScale*1.3)));
+  const dudCount = mob ? 2  : Math.max(4, Math.floor(bubCount*0.13));
 
-  // Min gap between bubbles — wider on mobile so they're easier to distinguish
-  const minGap=Math.max(14, Math.round(28/Math.max(areaScale,0.5)));
+  // Scatter & gap — on mobile keep bubbles close together so chains trigger
+  const maxScatter = mob ? Math.min(80, playW*0.18) : Math.max(40,Math.min(120,playW*0.14));
+  const minGap     = mob ? 6 : Math.max(14, Math.round(28/Math.max(areaScale,0.5)));
 
   const nonDud=['normal','normal','normal','large','chain','chain',novaRounds>0?'nova':'chain','nova'];
   let tr2=0;
@@ -1852,7 +1866,7 @@ function drawCombo(now){if(gState!=='react'||comboMulti<=1)return;const col=COMB
 // ── CHAIN ─────────────────────────────────────
 function getBubCol(type,now){return activeTheme().getBubbleColor(type,now);}
 function explode(idx,wave,now){const b=bubbles[idx];if(!b||done.has(idx)||b.state!=='idle')return;done.add(idx);if(b.type==='dud'){b.state='dud';b.popT=now;playPop('dud',wave);return;}b.state='pop';b.popT=now;chainN++;if(b.type==='nova')novaHitsRound++;comboWave=wave;comboMulti=waveToMulti(wave);const pts=Math.round(b.pts*(1+wave*.07)*waveToMulti(wave));score+=pts;lastPopT=now;const col=getBubCol(b.type,now);const fxCol=getFXColor(col,now);spawnParts(b.x,b.y,fxCol,b.r);rings.push({x:b.x,y:b.y,r:b.r,maxR:b.er,col,born:now,dur:420});floats.push({x:b.x,y:b.y-b.r-4,pts,multi:waveToMulti(wave),life:1,vy:-1.2});playPop(b.type,wave);if(b.type==='nova'){shakeAmt=11;shakeT=now;}else if(b.type==='large'){if(shakeAmt<7){shakeAmt=7;shakeT=now;}}else{if(shakeAmt<2.5){shakeAmt=2.5;shakeT=now;}}const cm=b.type==='chain'?1.55:1.0;bubbles.forEach((nb,ni)=>{if(ni===idx||done.has(ni)||nb.state!=='idle')return;if(waveQ.some(e=>e.idx===ni))return;if(Math.hypot(b.x-nb.x,b.y-nb.y)<b.er*cm+nb.r)waveQ.push({idx:ni,wave:wave+1});});}
-function startChain(px,py){if(gState!=='idle')return;getCtx();let best=-1,bestD=Infinity;bubbles.forEach((b,i)=>{const d=Math.hypot(px-b.x,py-b.y);if(d<bestD){best=i;bestD=d;}});if(best===-1||bestD>140)return;gState='react';$('hint').style.opacity='0';waveQ=[{idx:best,wave:0}];done=new Set();reactT=lastPopT=chainStartT=Date.now();score=chainN=0;comboWave=0;comboMulti=1;novaHitsRound=0;spawnSpark(px,py);playSpark();}
+function startChain(px,py){if(gState!=='idle')return;getCtx();const tapR=W<600?220:140;let best=-1,bestD=Infinity;bubbles.forEach((b,i)=>{const d=Math.hypot(px-b.x,py-b.y);if(d<bestD){best=i;bestD=d;}});if(best===-1||bestD>tapR)return;gState='react';$('hint').style.opacity='0';waveQ=[{idx:best,wave:0}];done=new Set();reactT=lastPopT=chainStartT=Date.now();score=chainN=0;comboWave=0;comboMulti=1;novaHitsRound=0;spawnSpark(px,py);playSpark();}
 function tickReact(){const now=Date.now(),elapsed=now-reactT,curWave=Math.floor(elapsed/WAVE_MS);waveQ.filter(e=>e.wave<=curWave&&!done.has(e.idx)).forEach(e=>explode(e.idx,e.wave,now));if(!waveQ.some(e=>!done.has(e.idx))&&(now-lastPopT)>POP_MS+140&&elapsed>WAVE_MS*2)endRound();}
 
 // ── END ROUND ─────────────────────────────────
@@ -1958,7 +1972,7 @@ function drawChainHUD(now){if(gState!=='react'||chainN===0)return;cx.save();cx.t
 function loop(){requestAnimationFrame(loop);const now=Date.now();let ox=0,oy=0;if(shakeAmt>.3){const a=(now-shakeT)/300;if(a<1){const i=shakeAmt*Math.pow(1-a,2);ox=(Math.random()-.5)*i*2.2;oy=(Math.random()-.5)*i*2.2;}else shakeAmt=0;}cx.save();cx.translate(ox,oy);activeTheme().drawBg(cx,bgElements,now);drawRings(now);bubbles.forEach(b=>drawBubble(b,now));drawParts();drawFloats();if(gState==='idle')drawActiveCursor(mx,my,now);drawChainHUD(now);if(flashA>.005){cx.globalAlpha=flashA;cx.fillStyle='#fff';cx.fillRect(0,0,W,H);flashA*=.82;}cx.restore();if(gState==='react'){tickReact();updateHUD();}if(activeThemeId==='prism'&&gState==='idle')updateLegend();}
 
 // ── NEW GAME ──────────────────────────────────
-function newGame(same){gState='idle';parts=[];rings=[];floats=[];waveQ=[];done=new Set();score=chainN=0;shakeAmt=0;flashA=0;comboWave=0;comboMulti=1;novaHitsRound=0;const seed=gMode==='daily'?dailySeed():(same?fieldSeed:(Math.random()*999999|0));bubbles=makeField(seed);maxPop=bubbles.filter(b=>b.type!=='dud').length;initBgElements();$('overlay').classList.remove('show');$('hint').style.opacity='1';$('daily-banner').classList.toggle('show',gMode==='daily');$('daily-num').textContent='#'+dayNumber();$('daily-done-badge').style.display=(gMode==='daily'&&dailyPlayed)?'inline-flex':'none';updateHUD();}
+function newGame(same){updateSafeTop();gState='idle';parts=[];rings=[];floats=[];waveQ=[];done=new Set();score=chainN=0;shakeAmt=0;flashA=0;comboWave=0;comboMulti=1;novaHitsRound=0;const seed=gMode==='daily'?dailySeed():(same?fieldSeed:(Math.random()*999999|0));bubbles=makeField(seed);maxPop=bubbles.filter(b=>b.type!=='dud').length;initBgElements();$('overlay').classList.remove('show');$('hint').style.opacity='1';$('daily-banner').classList.toggle('show',gMode==='daily');$('daily-num').textContent='#'+dayNumber();$('daily-done-badge').style.display=(gMode==='daily'&&dailyPlayed)?'inline-flex':'none';updateHUD();}
 
 // ── INPUT ─────────────────────────────────────
 cv.addEventListener('mousedown',e=>startChain(e.clientX,e.clientY));
@@ -1967,7 +1981,7 @@ cv.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];sta
 cv.addEventListener('touchmove',e=>{const t=e.touches[0];mx=t.clientX;my=t.clientY;},{passive:true});
 
 // ── BOOT ──────────────────────────────────────
-loadProgress();initLB();initBgElements();newGame(false);loop();
+loadProgress();initLB();initBgElements();updateSafeTop();newGame(false);loop();
 setTimeout(()=>initSlots(),200);
 
 // ── SERVICE WORKER ────────────────────────────
