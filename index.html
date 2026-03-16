@@ -19,23 +19,47 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* ─── HUD ─── */
+/* ─── HUD — three rows, safe-area aware ─── */
 #hud{
   position:fixed;top:0;left:0;right:0;z-index:10;
   display:flex;flex-direction:column;
   background:rgba(8,8,14,0.95);
   border-bottom:1px solid var(--b1);
   backdrop-filter:blur(20px);
-  padding-top:var(--safe-top);
-  padding-left:var(--safe-left);
-  padding-right:var(--safe-right);
+  padding-top:max(8px, var(--sat));
 }
-/* Row 1: logo + xp + stats */
-#hud-row1{display:flex;align-items:center;gap:10px;padding:8px 14px 0}
-/* Row 2: mode pill (left/center) + action buttons (right) */
+/* Row 1: logo + stats */
+#hud-row1{
+  display:flex;align-items:center;gap:8px;
+  padding:7px max(14px,var(--sal)) 5px max(14px,var(--sal));
+}
+#logo{
+  font-family:'Audiowide',sans-serif;font-size:15px;letter-spacing:.1em;
+  color:var(--amber);text-shadow:0 0 20px rgba(255,140,0,.4);
+  flex-shrink:0;
+}
+.stat{display:flex;flex-direction:column;align-items:center;flex:1}
+.stat-v{font-size:12px;font-weight:700;line-height:1;font-family:'JetBrains Mono',monospace}
+.stat-l{font-size:7px;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-top:1px}
+#sparks-v{color:var(--amber)}
+#streak-v{color:var(--coral)}
+/* Row 2: XP bar — full width, always visible */
+#hud-xp{
+  display:flex;align-items:center;gap:8px;
+  padding:0 max(14px,var(--sal)) 5px max(14px,var(--sal));
+}
+#lv-badge{
+  font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  color:var(--amber);white-space:nowrap;flex-shrink:0;
+}
+#xp-track-wrap{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.xp-track{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden}
+#xp-bar{height:100%;background:linear-gradient(90deg,var(--amber),var(--coral));border-radius:2px;width:0%;transition:width .7s cubic-bezier(.34,1.56,.64,1)}
+#xp-label{font-size:8px;color:var(--t3);font-family:'JetBrains Mono',monospace;text-align:right}
+/* Row 3: mode pill + buttons */
 #hud-row2{
   display:flex;align-items:center;justify-content:space-between;
-  padding:5px 10px 7px;gap:8px;
+  padding:0 max(10px,var(--sal)) 7px max(10px,var(--sal));gap:8px;
 }
 #mode-pill{
   display:flex;align-items:center;
@@ -60,6 +84,7 @@
   font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s;
   min-height:28px;
 }
+.tr-btn:hover{background:var(--glass2);color:var(--t1)}
 /* ═══════════════════════════════════════
    DESIGN TOKENS — Amber/Charcoal System
 ═══════════════════════════════════════ */
@@ -89,37 +114,17 @@
   --glass:rgba(255,255,255,0.04);
   --glass2:rgba(255,255,255,0.07);
   --r8:8px; --r12:12px; --r16:16px; --r20:20px; --r24:24px;
+  /* Safe areas for notched phones */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;user-select:none;-webkit-user-select:none}
-body{background:var(--bg);font-family:'DM Sans',system-ui,sans-serif;color:var(--t1)}
-canvas{position:fixed;top:0;left:0;display:block}
-
-/* ═══════════════════════════════════════
-   HUD
-═══════════════════════════════════════ */
-#hud{
-  position:fixed;top:0;left:0;right:0;z-index:10;
-  display:flex;align-items:center;gap:10px;padding:8px 14px;
-  background:rgba(8,8,14,0.95);
-  border-bottom:1px solid var(--b1);
-  backdrop-filter:blur(20px);
-}
-#logo{
-  font-family:'Audiowide',sans-serif;font-size:16px;letter-spacing:.1em;
-  color:var(--amber);text-shadow:0 0 20px rgba(255,140,0,.4);
-  flex-shrink:0;
-}
-.xp-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.xp-meta{display:flex;justify-content:space-between}
-.xp-meta span{font-size:9px;font-weight:500;color:var(--t3);letter-spacing:.06em;font-family:'JetBrains Mono',monospace}
-.xp-track{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
-#xp-bar{height:100%;background:linear-gradient(90deg,var(--amber),var(--coral));border-radius:2px;width:0%;transition:width .7s cubic-bezier(.34,1.56,.64,1)}
-.stat{display:flex;flex-direction:column;align-items:center;flex-shrink:0;min-width:42px}
-.stat-v{font-size:13px;font-weight:700;line-height:1;font-family:'JetBrains Mono',monospace}
-.stat-l{font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-top:1px}
-#sparks-v{color:var(--amber)}
-#streak-v{color:var(--coral)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{width:100%;height:100%;overflow:hidden;user-select:none;-webkit-user-select:none;position:fixed;overscroll-behavior:none}
+html{height:-webkit-fill-available}
+body{background:var(--bg);font-family:'DM Sans',system-ui,sans-serif;color:var(--t1);min-height:-webkit-fill-available}
+canvas{position:fixed;top:0;left:0;display:block;touch-action:none}
 
 @keyframes crate-pulse{0%,100%{box-shadow:0 0 18px rgba(255,140,0,.35)}50%{box-shadow:0 0 32px rgba(255,140,0,.7)}}
 /* Gem shop */
@@ -141,10 +146,10 @@ canvas{position:fixed;top:0;left:0;display:block}
 html,body{position:fixed;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
 html{height:-webkit-fill-available}
 canvas{touch-action:none}
-#hub-card{padding-bottom:var(--safe-bot)}
-#hub-body{padding-bottom:calc(16px + var(--safe-bot))}
-#loot-overlay{padding-bottom:calc(24px + var(--safe-bot))}
-#overlay{padding-bottom:calc(20px + var(--safe-bot))}
+#hub-card{padding-bottom:var(--sab)}
+#hub-body{padding-bottom:calc(16px + var(--sab))}
+#loot-overlay{padding-bottom:calc(24px + var(--sab))}
+#overlay{padding-bottom:calc(20px + var(--sab))}
 @media(max-height:700px){#hub-card{height:98vh}}
 @media(max-width:380px){.htab .hi{font-size:14px}.htab .hl{font-size:7px}#hub-tabs{padding:8px 6px 0;gap:2px}.htab{padding:6px 1px 8px}#slot-machine{transform:scale(0.88);transform-origin:center top}}
 .htab{min-height:50px}
@@ -712,20 +717,24 @@ canvas{touch-action:none}
 <body>
 <canvas id="c"></canvas>
 
-<!-- HUD: two rows, no separate fixed elements overlapping -->
+<!-- HUD: three rows — stats | xp bar | controls -->
 <div id="hud">
-  <!-- Row 1: branding + xp + stats -->
+  <!-- Row 1: logo + score + sparks + streak -->
   <div id="hud-row1">
     <span id="logo">SPARK</span>
-    <div class="xp-wrap">
-      <div class="xp-meta"><span id="lv-label">LV 1</span><span id="xp-label">0/300</span></div>
-      <div class="xp-track"><div id="xp-bar"></div></div>
-    </div>
     <div class="stat"><span class="stat-v" id="score-v">0</span><span class="stat-l">Score</span></div>
     <div class="stat"><span class="stat-v" id="sparks-v">0</span><span class="stat-l">⚡ Sparks</span></div>
     <div class="stat"><span class="stat-v" id="streak-v">1🔥</span><span class="stat-l">Streak</span></div>
   </div>
-  <!-- Row 2: mode pill + action buttons, same row, no overlap possible -->
+  <!-- Row 2: XP bar — full width, always visible -->
+  <div id="hud-xp">
+    <span id="lv-badge">LV 1</span>
+    <div id="xp-track-wrap">
+      <div class="xp-track"><div id="xp-bar"></div></div>
+    </div>
+    <span id="xp-label">0/400</span>
+  </div>
+  <!-- Row 3: mode pill + action buttons -->
   <div id="hud-row2">
     <div id="mode-pill">
       <div id="daily-dot"></div>
@@ -854,7 +863,7 @@ let W,H;
 function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
 resize();window.addEventListener('resize',()=>{resize();initBgElements();});
 
-const HUD_H=90,PILL_H=0,SAFE_TOP=HUD_H+8;
+const HUD_H=110,PILL_H=0,SAFE_TOP=HUD_H+8;
 const BUBBLE_N=62,WAVE_MS=105,POP_MS=240,PARTS_N=12;
 const BASE_TYPES={normal:{r:16,er:76,pts:100,w:40},large:{r:22,er:115,pts:160,w:14},chain:{r:14,er:70,pts:130,w:22},nova:{r:20,er:165,pts:260,w:8},dud:{r:14,er:0,pts:0,w:10}};
 
@@ -1372,7 +1381,7 @@ function loadProgress(){
   }catch(_){}
 }
 function saveGS(){try{localStorage.setItem('sk_gs',JSON.stringify(globalStats));}catch(_){}}
-function xpNeeded(l){return 300+(l-1)*220;}
+function xpNeeded(l){return Math.floor(400*Math.pow(1.35,l-1));}
 function addXP(amt){
   const m=xpBoostRounds>0?2:1;pXP+=amt*m;let leveled=false;const ol=pLevel;
   while(pXP>=xpNeeded(pLevel)){pXP-=xpNeeded(pLevel);pLevel++;leveled=true;}
@@ -1418,7 +1427,24 @@ function buyItem(itemId){
     if(item.boostId==='lucky'){luckyRounds+=3;try{localStorage.setItem('sk_lucky',luckyRounds);}catch(_){}}
     if(item.boostId==='nova'){novaRounds+=2;try{localStorage.setItem('sk_nova',novaRounds);}catch(_){}}
   }
-  updateHUD();buildShopTab();toast('✅',item.name+' unlocked!','Enjoy!');
+  updateHUD();buildShopTab();
+  // If gear panel is open on loadout tab, refresh it so new cursor/fx shows immediately
+  if($('theme-panel').classList.contains('open')&&gearTab==='loadout'){
+    const gb=$('gear-body');gb.innerHTML='';buildLoadoutInGear(gb);
+  }
+  // For cursor/FX purchases, auto-open gear panel to loadout so user can see it right away
+  if(item.type==='cursor'||item.type==='fx'){
+    gearTab='loadout';
+    const gb=$('gear-body');gb.innerHTML='';buildLoadoutInGear(gb);
+    $('theme-panel').classList.add('open');
+    $('gpill-theme').classList.remove('active');
+    $('gpill-loadout').classList.add('active');
+  }
+  // Give a helpful hint telling user WHERE to equip
+  const hint=item.type==='cursor'||item.type==='fx'?'Equip in ◈ Gear → Loadout':
+             item.type==='theme'?'Now active!':
+             item.type==='boost'?'Active for next rounds!':'Enjoy!';
+  toast('✅',item.name+' unlocked!',hint);
 }
 
 // ── STREAK ──────────────────────────────────
@@ -1598,7 +1624,23 @@ function buildStreakTab(){
 // ── THEME PANEL ─────────────────────────────
 // ── GEAR PANEL ───────────────────────────────
 let gearTab='theme';
-function openGearPanel(){setGearTab(gearTab);$('theme-panel').classList.add('open');}
+function openGearPanel(){
+  const panel=$('theme-panel');
+  if(panel.classList.contains('open')){panel.classList.remove('open');return;}
+  setGearTab(gearTab);
+  panel.classList.add('open');
+}
+function closeGearPanel(){$('theme-panel').classList.remove('open');}
+// Close on outside click (mouse) or touch
+function _gearOutside(e){
+  const panel=$('theme-panel'),btn=$('gear-btn');
+  if(!panel||!btn)return;
+  if(!panel.contains(e.target)&&e.target!==btn&&!btn.contains(e.target)){
+    panel.classList.remove('open');
+  }
+}
+document.addEventListener('mousedown',_gearOutside);
+document.addEventListener('touchstart',_gearOutside,{passive:true});
 function setGearTab(tab){
   gearTab=tab;
   $('gpill-theme').classList.toggle('active',tab==='theme');
@@ -1628,10 +1670,11 @@ function buildThemeGrid(container){
   container.appendChild(grid);
 }
 function buildLoadoutInGear(container){
+  // ── FX Pack section ──
   const fxl=document.createElement('div');fxl.className='slabel';fxl.style.marginBottom='10px';fxl.textContent='FX Pack';container.appendChild(fxl);
   const ownedFX=SHOP_POOL.filter(item=>item.type==='fx'&&isOwned(item.id));
   if(!ownedFX.length){
-    const e=document.createElement('div');e.style.cssText='padding:12px;background:var(--bg4);border:1px solid var(--b1);border-radius:var(--r12);font-size:10px;color:var(--t3);text-align:center;line-height:1.7';e.innerHTML='No FX packs owned yet.<br>Win them on the wheel or buy in ⚡ Sparks shop.';container.appendChild(e);
+    const e=document.createElement('div');e.style.cssText='padding:12px;background:var(--bg4);border:1px solid var(--b1);border-radius:var(--r12);font-size:10px;color:var(--t3);text-align:center;line-height:1.7;margin-bottom:12px';e.innerHTML='No FX packs owned yet.<br>Win them on the crate or buy in ⚡ Sparks shop.';container.appendChild(e);
   } else {
     const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px';
     const noneSlot=document.createElement('div');noneSlot.className='equip-slot'+(activeFX===''?' active-slot':'');
@@ -1645,33 +1688,34 @@ function buildLoadoutInGear(container){
       grid.appendChild(slot);
     });
     container.appendChild(grid);
-    if(activeFX){const cur=SHOP_POOL.find(i=>i.fxId===activeFX);if(cur){const badge=document.createElement('div');badge.style.cssText='margin-bottom:10px;padding:6px 11px;background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.14);border-radius:var(--r12);font-size:10px;color:rgba(255,140,0,.8);display:flex;align-items:center;gap:6px';badge.innerHTML=`<span>${cur.emoji}</span><span>Active: <strong>${cur.name}</strong></span>`;container.appendChild(badge);}}
+    if(activeFX){const cur=SHOP_POOL.find(i=>i.fxId===activeFX);if(cur){const badge=document.createElement('div');badge.style.cssText='margin-bottom:12px;padding:6px 11px;background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.14);border-radius:var(--r12);font-size:10px;color:rgba(255,140,0,.8);display:flex;align-items:center;gap:6px';badge.innerHTML=`<span>${cur.emoji}</span><span>Active: <strong>${cur.name}</strong></span>`;container.appendChild(badge);}}
+  }
 
-  // ── Cursor section ──
+  // ── Cursor Skin section — always shown ──
   const cl=document.createElement('div');cl.className='slabel';cl.style.marginBottom='10px';cl.textContent='Cursor Skin';container.appendChild(cl);
   const ownedCursors=SHOP_POOL.filter(item=>item.type==='cursor'&&isOwned(item.id));
   const cgrid=document.createElement('div');cgrid.style.cssText='display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px';
-  // Default option
+  // Default slot always present
   const defSlot=document.createElement('div');defSlot.className='equip-slot'+(activeCursor===''?' active-slot':'');
   defSlot.innerHTML='<span class="equip-icon">🖱️</span><div class="equip-name">Default</div>';
   defSlot.onclick=()=>{activeCursor='';try{localStorage.setItem('sk_cursor','');}catch(_){}const gb=$('gear-body');gb.innerHTML='';buildLoadoutInGear(gb);toast('🖱️','Default cursor','Theme cursor active');};
   cgrid.appendChild(defSlot);
   if(!ownedCursors.length){
     const info=document.createElement('div');info.style.cssText='grid-column:span 2;padding:10px 12px;background:var(--bg4);border:1px solid var(--b1);border-radius:var(--r12);font-size:9px;color:var(--t3);display:flex;align-items:center;gap:6px';
-    info.innerHTML='<span style="font-size:18px">👻</span><span>Buy cursor skins in the ⚡ Sparks shop</span>';
+    info.innerHTML='<span style="font-size:18px">👻</span><span>Buy cursors in ⚡ Sparks shop</span>';
     cgrid.appendChild(info);
   } else {
     ownedCursors.forEach(item=>{
       const slot=document.createElement('div');slot.className='equip-slot'+(activeCursor===item.cursorId?' active-slot':'');
       slot.innerHTML=`<span class="equip-icon">${item.emoji}</span><div class="equip-name">${item.name.split(' ')[0]}</div>`;
-      slot.onclick=()=>{activeCursor=item.cursorId;try{localStorage.setItem('sk_cursor',activeCursor);}catch(_){}const gb=$('gear-body');gb.innerHTML='';buildLoadoutInGear(gb);toast(item.emoji,item.name+' cursor equipped!','Follow your mouse now');};
+      slot.onclick=()=>{activeCursor=item.cursorId;try{localStorage.setItem('sk_cursor',activeCursor);}catch(_){}const gb=$('gear-body');gb.innerHTML='';buildLoadoutInGear(gb);toast(item.emoji,item.name+' cursor equipped!','Active now!');};
       cgrid.appendChild(slot);
     });
   }
   container.appendChild(cgrid);
-  // Show active cursor label
-  if(activeCursor){const cur=SHOP_POOL.find(i=>i.cursorId===activeCursor);if(cur){const badge=document.createElement('div');badge.style.cssText='margin-bottom:10px;padding:6px 11px;background:rgba(0,212,180,.06);border:1px solid rgba(0,212,180,.14);border-radius:var(--r12);font-size:10px;color:rgba(0,212,180,.85);display:flex;align-items:center;gap:6px';badge.innerHTML=`<span>${cur.emoji}</span><span>Active: <strong>${cur.name}</strong></span>`;container.appendChild(badge);}}
-  }
+  if(activeCursor){const cur=SHOP_POOL.find(i=>i.cursorId===activeCursor);if(cur){const badge=document.createElement('div');badge.style.cssText='margin-bottom:12px;padding:6px 11px;background:rgba(0,212,180,.06);border:1px solid rgba(0,212,180,.14);border-radius:var(--r12);font-size:10px;color:rgba(0,212,180,.85);display:flex;align-items:center;gap:6px';badge.innerHTML=`<span>${cur.emoji}</span><span>Active: <strong>${cur.name}</strong></span>`;container.appendChild(badge);}}
+
+  // ── Active boosts ──
   if(xpBoostRounds>0||luckyRounds>0||novaRounds>0){
     const bl=document.createElement('div');bl.className='slabel';bl.style.marginBottom='8px';bl.textContent='Active Boosts';container.appendChild(bl);
     const bb=document.createElement('div');bb.style.cssText='padding:10px 13px;background:var(--bg4);border:1px solid var(--b1);border-radius:var(--r12);font-size:10px;color:rgba(255,140,0,.8);line-height:1.9';
@@ -1680,7 +1724,6 @@ function buildLoadoutInGear(container){
   }
 }
 function selectTheme(id){activeThemeId=id;try{localStorage.setItem('sk_theme',id);}catch(_){}initBgElements();updateLegend();buildThemeGrid($('gear-body'));toast(THEMES.find(t=>t.id===id)?.emoji||'◈','Theme: '+THEMES.find(t=>t.id===id)?.name,'Equipped!');}
-document.addEventListener('mousedown',e=>{if(!$('theme-panel').contains(e.target)&&e.target!==$('gear-btn'))$('theme-panel').classList.remove('open');});
 
 // ── GEM SHOP TAB ─────────────────────────────
 const GEM_SHOP_ITEMS=[
@@ -1721,7 +1764,85 @@ setInterval(updateCountdown,1000);updateCountdown();
 
 // ── FIELD ─────────────────────────────────────
 function pickType(rng){const total=Object.values(BASE_TYPES).reduce((s,t)=>s+t.w,0);let r=rng.next()*total;for(const[k,v]of Object.entries(BASE_TYPES)){r-=v.w;if(r<=0)return k;}return'normal';}
-function makeField(seed){fieldSeed=seed;const rng=new RNG(seed),field=[];const mg=60,top=SAFE_TOP+50,bot=H-mg,playW=W-mg*2,playH=bot-top;const centres=[];const cc2=7+Math.floor(rng.next()*3);for(let c=0;c<cc2;c++){let cx2,cy2,tr=0,ok=false;while(!ok&&tr<200){tr++;cx2=mg+rng.next()*playW;cy2=top+rng.next()*playH;ok=centres.every(cc=>Math.hypot(cx2-cc.x,cy2-cc.y)>120);}if(ok)centres.push({x:cx2,y:cy2});}const nonDud=['normal','normal','normal','large','chain','chain',novaRounds>0?'nova':'chain','nova'];let tr2=0;while(field.length<BUBBLE_N-8&&tr2<12000){tr2++;const cc=centres[Math.floor(rng.next()*centres.length)];const angle=rng.next()*Math.PI*2,dist=20+rng.next()*110;const x=Math.max(mg,Math.min(W-mg,cc.x+Math.cos(angle)*dist));const y=Math.max(top,Math.min(bot,cc.y+Math.sin(angle)*dist));const typeName=nonDud[Math.floor(rng.next()*nonDud.length)];const cfg=BASE_TYPES[typeName];let ok=true;for(const b of field){if(Math.hypot(x-b.x,y-b.y)<b.r+cfg.r+6){ok=false;break;}}if(ok)field.push({x,y,r:cfg.r,er:cfg.er,type:typeName,pts:cfg.pts,state:'idle',popT:0,entryT:Date.now()+field.length*12});}const dc=BASE_TYPES.dud;let dt=0;while(field.filter(b=>b.type==='dud').length<8&&dt<3000){dt++;const x=mg+rng.next()*playW,y=top+rng.next()*playH;let ok=true;for(const b of field){if(Math.hypot(x-b.x,y-b.y)<b.r+dc.r+10){ok=false;break;}}if(ok)field.push({x,y,r:dc.r,er:0,type:'dud',pts:0,state:'idle',popT:0,entryT:Date.now()+field.length*12});}return field;}
+function makeField(seed){
+  fieldSeed=seed;
+  const rng=new RNG(seed),field=[];
+  const mg=Math.max(30,Math.min(60,W*0.06)); // margin scales with screen
+  const top=SAFE_TOP+30,bot=H-mg;
+  const playW=W-mg*2,playH=bot-top;
+
+  // Scale factor: 1.0 on a ~1000px wide desktop, smaller on mobile
+  // Use geometric mean of play area vs reference area
+  const refArea=900*600; // reference desktop play area
+  const actualArea=playW*playH;
+  const areaScale=Math.sqrt(actualArea/refArea); // ~0.55 on 390px phone
+
+  // Fewer bubbles on smaller screens — but enough to be fun
+  const minBubbles=24;
+  const maxBubbles=BUBBLE_N; // 62
+  const bubCount=Math.max(minBubbles, Math.min(maxBubbles, Math.floor(maxBubbles*areaScale*1.3)));
+  const dudCount=Math.max(4, Math.floor(bubCount*0.13));
+
+  // Cluster centres: fewer on small screens, minimum separation scales too
+  const clusterCount=Math.max(4, Math.min(9, 5+Math.floor(rng.next()*3)));
+  const minClusterSep=Math.max(80, playW*0.22);
+  const centres=[];
+  for(let c=0;c<clusterCount;c++){
+    let cx2,cy2,tr=0,ok=false;
+    while(!ok&&tr<200){
+      tr++;
+      cx2=mg+rng.next()*playW;
+      cy2=top+rng.next()*playH;
+      ok=centres.every(cc=>Math.hypot(cx2-cc.x,cy2-cc.y)>minClusterSep);
+    }
+    if(ok)centres.push({x:cx2,y:cy2});
+  }
+
+  // Explosion radii: scale DOWN on small screens so chains are harder to trigger
+  // On a 390px phone the er should be ~55-60% of desktop values
+  const erScale=Math.max(0.50, Math.min(1.0, areaScale));
+  const types={
+    normal:{r:16, er:Math.round(76*erScale),  pts:100,w:40},
+    large: {r:22, er:Math.round(115*erScale), pts:160,w:14},
+    chain: {r:14, er:Math.round(70*erScale),  pts:130,w:22},
+    nova:  {r:20, er:Math.round(165*erScale), pts:260,w:8},
+    dud:   {r:14, er:0,                        pts:0,  w:10},
+  };
+
+  // Scatter distance around cluster centres
+  const maxScatter=Math.max(40, Math.min(120, playW*0.14));
+
+  // Min gap between bubbles — wider on mobile so they're easier to distinguish
+  const minGap=Math.max(14, Math.round(28/Math.max(areaScale,0.5)));
+
+  const nonDud=['normal','normal','normal','large','chain','chain',novaRounds>0?'nova':'chain','nova'];
+  let tr2=0;
+  while(field.length<bubCount-dudCount&&tr2<15000){
+    tr2++;
+    const cc=centres[Math.floor(rng.next()*centres.length)];
+    const angle=rng.next()*Math.PI*2;
+    const dist=10+rng.next()*maxScatter;
+    const x=Math.max(mg,Math.min(W-mg,cc.x+Math.cos(angle)*dist));
+    const y=Math.max(top,Math.min(bot,cc.y+Math.sin(angle)*dist));
+    const typeName=nonDud[Math.floor(rng.next()*nonDud.length)];
+    const cfg=types[typeName];
+    let ok=true;
+    for(const b of field){if(Math.hypot(x-b.x,y-b.y)<b.r+cfg.r+minGap){ok=false;break;}}
+    if(ok)field.push({x,y,r:cfg.r,er:cfg.er,type:typeName,pts:cfg.pts,state:'idle',popT:0,entryT:Date.now()+field.length*12});
+  }
+
+  // Duds — scattered separately
+  const dc=types.dud;
+  let dt=0;
+  while(field.filter(b=>b.type==='dud').length<dudCount&&dt<3000){
+    dt++;
+    const x=mg+rng.next()*playW,y=top+rng.next()*playH;
+    let ok=true;
+    for(const b of field){if(Math.hypot(x-b.x,y-b.y)<b.r+dc.r+minGap){ok=false;break;}}
+    if(ok)field.push({x,y,r:dc.r,er:0,type:'dud',pts:0,state:'idle',popT:0,entryT:Date.now()+field.length*12});
+  }
+  return field;
+}
 
 // ── COMBO ─────────────────────────────────────
 function waveToMulti(w){if(w>=15)return 8;if(w>=10)return 5;if(w>=6)return 3;if(w>=3)return 2;return 1;}
@@ -1813,7 +1934,15 @@ function positionBanner(){
 }
 function updateHUD(){
   positionBanner();
-  $('score-v').textContent=score.toLocaleString();$('streak-v').textContent=pStreak+'🔥';$('sparks-v').textContent=sparks.toLocaleString();$('lv-label').textContent='LV '+pLevel;const pct=Math.min(100,(pXP/xpNeeded(pLevel))*100);$('xp-bar').style.width=pct.toFixed(1)+'%';$('xp-label').textContent=pXP.toLocaleString()+'/'+xpNeeded(pLevel).toLocaleString();$('daily-dot').style.display=(!dailyPlayed)?'block':'none';updateLegend();
+  $('score-v').textContent=score.toLocaleString();
+  $('streak-v').textContent=pStreak+'🔥';
+  $('sparks-v').textContent=sparks.toLocaleString();
+  $('lv-badge').textContent='LV '+pLevel;
+  const pct=Math.min(100,(pXP/xpNeeded(pLevel))*100);
+  $('xp-bar').style.width=pct.toFixed(1)+'%';
+  $('xp-label').textContent=pXP.toLocaleString()+'/'+xpNeeded(pLevel).toLocaleString();
+  $('daily-dot').style.display=(!dailyPlayed)?'block':'none';
+  updateLegend();
 }
 
 // ── RENDER ────────────────────────────────────
